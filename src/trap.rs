@@ -163,13 +163,13 @@ pub fn delegate_trap() {
         // medeleg::set_breakpoint();
         medeleg::clear_breakpoint();
         medeleg::set_user_env_call();
-        // medeleg::set_instruction_page_fault();
+        medeleg::set_instruction_page_fault();
         medeleg::set_load_page_fault();
         medeleg::set_store_page_fault();
         // medeleg::set_instruction_fault();
         // medeleg::clear_load_page_fault();
         // medeleg::clear_store_page_fault();
-        medeleg::clear_instruction_page_fault();
+        // medeleg::clear_instruction_page_fault();
         medeleg::clear_instruction_fault();
         // medeleg::set_load_fault();
         // medeleg::set_store_fault();
@@ -278,7 +278,7 @@ extern "C" fn start_trap_rust(trap_frame: &mut TrapFrame) {
                     let load_value = unsafe { misaligned::load_vaddr(load_vaddr, mem_unit, signed)};
                     trap_frame.set_register_xi(rd, load_value);
                     // println!("[rustsbi trap handler] Load misaligned! epc: {:016x?}, ins: {:016x}, addr: {:016x}", ins_vaddr , ins, load_vaddr);
-                    // println!("[rustsbi trap handler] rd: {:?} value: {:016x}", rd,load_value);
+                    // println!("[rustsbi trap handler] (uncompressed) rd: {:?} value: {:016x}", rd,load_value);
                     mepc::write(mepc::read().wrapping_add(4)); // 跳过指令
                 }
                 2 => {
@@ -290,7 +290,7 @@ extern "C" fn start_trap_rust(trap_frame: &mut TrapFrame) {
                     let load_value = unsafe { misaligned::load_vaddr(load_vaddr, mem_unit, signed)};
                     trap_frame.set_register_xi(rd, load_value);
                     // println!("[rustsbi trap handler] Load misaligned! epc: {:016x?}, ins: {:016x}, addr: {:016x}", ins_vaddr , ins, load_vaddr);
-                    // println!("[rustsbi trap handler] rd: {:?} value: {:016x}", rd,load_value);
+                    // println!("[rustsbi trap handler] (c, sp based) rd: {:?} value: {:016x}", rd,load_value);
                     mepc::write(mepc::read().wrapping_add(2)); // 跳过指令
                 }
                 0 => {
@@ -303,11 +303,11 @@ extern "C" fn start_trap_rust(trap_frame: &mut TrapFrame) {
                     let load_value = unsafe { misaligned::load_vaddr(load_vaddr, mem_unit, signed)};
                     trap_frame.set_register_xic(rd, load_value);
                     // println!("[rustsbi trap handler] Load misaligned! epc: {:016x?}, ins: {:016x}, addr: {:016x}", ins_vaddr , ins, load_vaddr);
-                    // println!("[rustsbi trap handler] rd: {:?} value: {:016x}", rd,load_value);
+                    // println!("[rustsbi trap handler] (compressed) rd: {:?} value: {:016x}", rd,load_value);
                     mepc::write(mepc::read().wrapping_add(2)); // 跳过指令
                 }
                 _ => {
-                    panic!("[rustsbi trap handler] Invalid load misaligned! epc: {:016x?}, ins: {:016x}", ins_vaddr , ins);
+                    panic!("[rustsbi misaligned] Invalid load misaligned! epc: {:016x?}, ins: {:016x}", ins_vaddr , ins);
                 }
             }
         }
@@ -329,7 +329,7 @@ extern "C" fn start_trap_rust(trap_frame: &mut TrapFrame) {
                     let store_vaddr = mtval::read();
                     unsafe { misaligned::store_vaddr(store_vaddr, mem_unit, store_value)};
                     // println!("[rustsbi trap handler] Store misaligned! epc: {:016x?}, ins: {:016x}, addr: {:016x}", ins_vaddr , ins, store_vaddr);
-                    // println!("[rustsbi trap handler] rs: {:?} value: {:016x}", rs,store_value);
+                    // println!("[rustsbi trap handler] (uncompressed) rs: {:?} value: {:016x}", rs,store_value);
                     mepc::write(mepc::read().wrapping_add(4)); // 跳过指令
                 }
                 2 => {
@@ -340,7 +340,7 @@ extern "C" fn start_trap_rust(trap_frame: &mut TrapFrame) {
                     let store_vaddr = mtval::read();
                     unsafe { misaligned::store_vaddr(store_vaddr, mem_unit, store_value)};
                     // println!("[rustsbi trap handler] Store misaligned! epc: {:016x?}, ins: {:016x}, addr: {:016x}", ins_vaddr , ins, store_vaddr);
-                    // println!("[rustsbi trap handler] rs: {:?} value: {:016x}", rs,store_value);
+                    // println!("[rustsbi trap handler] (c, sp based) rs: {:?} value: {:016x}", rs,store_value);
                     mepc::write(mepc::read().wrapping_add(2)); // 跳过指令
                 }
                 0 => {
@@ -352,11 +352,11 @@ extern "C" fn start_trap_rust(trap_frame: &mut TrapFrame) {
                     let store_vaddr = mtval::read();
                     unsafe { misaligned::store_vaddr(store_vaddr, mem_unit, store_value)};
                     // println!("[rustsbi trap handler] Store misaligned! epc: {:016x?}, ins: {:016x}, addr: {:016x}", ins_vaddr , ins, store_vaddr);
-                    // println!("[rustsbi trap handler] rs: {:?} value: {:016x}", rs,store_value);
+                    // println!("[rustsbi trap handler] (compressed) rs: {:?} value: {:016x}", rs,store_value);
                     mepc::write(mepc::read().wrapping_add(2)); // 跳过指令
                 }
                 _ => {
-                    panic!("[rustsbi trap handler] Invalid Store misaligned! epc: {:016x?}, ins: {:016x}", ins_vaddr , ins);
+                    panic!("[rustsbi misaligned] Invalid Store misaligned! epc: {:016x?}, ins: {:016x}", ins_vaddr , ins);
                 }
             }
         }

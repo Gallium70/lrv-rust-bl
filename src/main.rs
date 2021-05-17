@@ -176,13 +176,16 @@ extern "C" fn main(_mhartid: usize) -> ! {
     init_pmp();
     unsafe {
         use riscv::register::{
-            mepc,
+            mcounteren, mepc,
             mstatus::{self, MPP},
             sstatus,
         };
         // mstatus::clear_mpie();
         mstatus::set_mpie();
         mstatus::set_sum();
+        mcounteren::set_cy();
+        mcounteren::set_tm();
+        mcounteren::set_ir();
         sstatus::set_sum();
         mstatus::set_mpp(MPP::Supervisor);
         println!("[rustsbi] entering supervisor mode...");

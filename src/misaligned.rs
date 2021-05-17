@@ -53,6 +53,7 @@ pub unsafe fn load_vaddr(vaddr: usize, mem_unit: MemoryUnit, signed: bool) -> us
             srl     {ans}, {ans}, {bit_off}         # low bits
             sll     {vaddr}, {vaddr}, {neg_off}     # high bits
             or      {ans}, {ans}, {vaddr}           # concat
+            fence   iorw, iorw
         1:  csrw    mstatus, {mprv}
             ",
             vaddr = in(reg) vaddr,
@@ -72,6 +73,7 @@ pub unsafe fn load_vaddr(vaddr: usize, mem_unit: MemoryUnit, signed: bool) -> us
             srl     {ans}, {ans}, {bit_off}         # low bits
             sll     {vaddr}, {vaddr}, {neg_off}     # high bits
             or      {ans}, {ans}, {vaddr}           # concat
+            fence   iorw, iorw
         1:  csrw    mstatus, {mprv}
             ",
             vaddr = in(reg) vaddr,
@@ -85,12 +87,13 @@ pub unsafe fn load_vaddr(vaddr: usize, mem_unit: MemoryUnit, signed: bool) -> us
             asm!("
             li      {mprv}, (1 << 17)
             csrrs   {mprv}, mstatus, {mprv}
-            ld     {ans}, 0({vaddr})
+            ld      {ans}, 0({vaddr})
             beqz    {bit_off}, 1f                   # vaddr naturally aligned
-            ld     {vaddr}, 8({vaddr})             # use vaddr to store high bits
+            ld      {vaddr}, 8({vaddr})             # use vaddr to store high bits
             srl     {ans}, {ans}, {bit_off}         # low bits
             sll     {vaddr}, {vaddr}, {neg_off}     # high bits
             or      {ans}, {ans}, {vaddr}           # concat
+            fence   iorw, iorw
         1:  csrw    mstatus, {mprv}
             ",
             vaddr = in(reg) vaddr,
@@ -101,7 +104,8 @@ pub unsafe fn load_vaddr(vaddr: usize, mem_unit: MemoryUnit, signed: bool) -> us
             );
         }
         _ => {
-            ans = 0;
+            panic!("[rustsbi misaligned] Unsupported memory load unit!");
+            // ans = 0;
         }
     }
     if signed {
@@ -142,6 +146,7 @@ pub unsafe fn store_vaddr(vaddr: usize, mem_unit: MemoryUnit, store_value: usize
             srl     {store_lo}, {store_lo}, {neg_off}   # clear high bits in vaddr[0]
             sll     {value}, {value}, {bit_off}         # clear low bits in value
             or      {value}, {store_lo}, {value}        # concat vaddr[0]
+            fence   iorw, iorw
         1:  sh      {value}, 0({vaddr})
             csrw    mstatus, {mprv}
             ",
@@ -170,6 +175,7 @@ pub unsafe fn store_vaddr(vaddr: usize, mem_unit: MemoryUnit, store_value: usize
             srl     {store_lo}, {store_lo}, {neg_off}   # clear high bits in vaddr[0]
             sll     {value}, {value}, {bit_off}         # clear low bits in value
             or      {value}, {store_lo}, {value}        # concat vaddr[0]
+            fence   iorw, iorw
         1:  sw      {value}, 0({vaddr})
             csrw    mstatus, {mprv}
             ",
@@ -187,17 +193,18 @@ pub unsafe fn store_vaddr(vaddr: usize, mem_unit: MemoryUnit, store_value: usize
             li      {mprv}, (1 << 17)
             csrrs   {mprv}, mstatus, {mprv}
             beqz    {bit_off}, 1f                       # vaddr naturally aligned
-            ld     {store_hi}, 8({vaddr})
+            ld      {store_hi}, 8({vaddr})
             srl     {store_hi}, {store_hi}, {bit_off}
             sll     {store_hi}, {store_hi}, {bit_off}   # clear low bits in vaddr[8]
             srl     {store_lo}, {value}, {neg_off}      # clear high bits in value
             or      {store_hi}, {store_hi}, {store_lo}  # concat vaddr[8]
             sd      {store_hi}, 8({vaddr})
-            ld     {store_lo}, 0({vaddr})
+            ld      {store_lo}, 0({vaddr})
             sll     {store_lo}, {store_lo}, {neg_off}
             srl     {store_lo}, {store_lo}, {neg_off}   # clear high bits in vaddr[0]
             sll     {value}, {value}, {bit_off}         # clear low bits in value
             or      {value}, {store_lo}, {value}        # concat vaddr[0]
+            fence   iorw, iorw
         1:  sd      {value}, 0({vaddr})
             csrw    mstatus, {mprv}
             ",
@@ -210,6 +217,8 @@ pub unsafe fn store_vaddr(vaddr: usize, mem_unit: MemoryUnit, store_value: usize
             store_hi = out(reg) _
             );
         }
-        _ => {}
+        _ => {
+            panic!("[rustsbi misaligned] Unsupported memory store unit!");
+        }
     }
 }
