@@ -1,0 +1,20 @@
+[package]
+name = "lrv-rust-bl"
+version = "0.1.0"
+authors = ["Gallium70 <52118815+Gallium70@users.noreply.github.com>"]
+edition = "2018"
+publish = false
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+rustsbi = { git = "https://github.com/luojia65/rustsbi" }
+riscv = { git = "https://github.com/rust-embedded/riscv", features = ["inline-asm"] }
+linked_list_allocator = "0.8"
+r0 = "1.0"
+lazy_static = { version = "1", features = ["spin_no_std"] }
+spin = "0.7"
+# 这几个其实不用，应该使用对应的hal库实现
+embedded-hal = "1.0.0-alpha.1"
+nb = "1"
+device_tree = { git = "https://github.com/rcore-os/device_tree-rs/" }
