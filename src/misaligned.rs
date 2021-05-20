@@ -47,13 +47,13 @@ pub unsafe fn load_vaddr(vaddr: usize, mem_unit: MemoryUnit, signed: bool) -> us
             asm!("
             li      {mprv}, (1 << 17)
             csrrs   {mprv}, mstatus, {mprv}
+            fence   iorw, iorw
             lhu     {ans}, 0({vaddr})
             beqz    {bit_off}, 1f                   # vaddr naturally aligned
             lhu     {vaddr}, 2({vaddr})             # use vaddr to store high bits
             srl     {ans}, {ans}, {bit_off}         # low bits
             sll     {vaddr}, {vaddr}, {neg_off}     # high bits
             or      {ans}, {ans}, {vaddr}           # concat
-            fence   iorw, iorw
         1:  csrw    mstatus, {mprv}
             ",
             vaddr = in(reg) vaddr,
@@ -67,13 +67,13 @@ pub unsafe fn load_vaddr(vaddr: usize, mem_unit: MemoryUnit, signed: bool) -> us
             asm!("
             li      {mprv}, (1 << 17)
             csrrs   {mprv}, mstatus, {mprv}
+            fence   iorw, iorw
             lwu     {ans}, 0({vaddr})
             beqz    {bit_off}, 1f                   # vaddr naturally aligned
             lwu     {vaddr}, 4({vaddr})             # use vaddr to store high bits
             srl     {ans}, {ans}, {bit_off}         # low bits
             sll     {vaddr}, {vaddr}, {neg_off}     # high bits
             or      {ans}, {ans}, {vaddr}           # concat
-            fence   iorw, iorw
         1:  csrw    mstatus, {mprv}
             ",
             vaddr = in(reg) vaddr,
@@ -87,13 +87,13 @@ pub unsafe fn load_vaddr(vaddr: usize, mem_unit: MemoryUnit, signed: bool) -> us
             asm!("
             li      {mprv}, (1 << 17)
             csrrs   {mprv}, mstatus, {mprv}
+            fence   iorw, iorw
             ld      {ans}, 0({vaddr})
             beqz    {bit_off}, 1f                   # vaddr naturally aligned
             ld      {vaddr}, 8({vaddr})             # use vaddr to store high bits
             srl     {ans}, {ans}, {bit_off}         # low bits
             sll     {vaddr}, {vaddr}, {neg_off}     # high bits
             or      {ans}, {ans}, {vaddr}           # concat
-            fence   iorw, iorw
         1:  csrw    mstatus, {mprv}
             ",
             vaddr = in(reg) vaddr,
@@ -124,6 +124,9 @@ pub unsafe fn load_vaddr(vaddr: usize, mem_unit: MemoryUnit, signed: bool) -> us
 #[inline]
 #[allow(unused)]
 pub unsafe fn store_vaddr(vaddr: usize, mem_unit: MemoryUnit, store_value: usize) {
+    let shift = 64 - mem_unit.to_bitwidth();
+    let store_value = store_value << shift;
+    let store_value = store_value >> shift;
     let align_mask = mem_unit.to_bytenum() - 1;
     let addr_offset = vaddr & align_mask;
     let vaddr = vaddr - addr_offset;
@@ -135,6 +138,7 @@ pub unsafe fn store_vaddr(vaddr: usize, mem_unit: MemoryUnit, store_value: usize
             li      {mprv}, (1 << 17)
             csrrs   {mprv}, mstatus, {mprv}
             beqz    {bit_off}, 1f                       # vaddr naturally aligned
+            fence   iorw, iorw
             lhu     {store_hi}, 2({vaddr})
             srl     {store_hi}, {store_hi}, {bit_off}
             sll     {store_hi}, {store_hi}, {bit_off}   # clear low bits in vaddr[2]
@@ -142,12 +146,14 @@ pub unsafe fn store_vaddr(vaddr: usize, mem_unit: MemoryUnit, store_value: usize
             or      {store_hi}, {store_hi}, {store_lo}  # concat vaddr[2]
             sh      {store_hi}, 2({vaddr})
             lhu     {store_lo}, 0({vaddr})
+            li      {store_hi}, 64
+            sub     {neg_off}, {store_hi}, {bit_off}
             sll     {store_lo}, {store_lo}, {neg_off}
             srl     {store_lo}, {store_lo}, {neg_off}   # clear high bits in vaddr[0]
             sll     {value}, {value}, {bit_off}         # clear low bits in value
             or      {value}, {store_lo}, {value}        # concat vaddr[0]
-            fence   iorw, iorw
         1:  sh      {value}, 0({vaddr})
+            fence   iorw, iorw
             csrw    mstatus, {mprv}
             ",
             vaddr = in(reg) vaddr,
@@ -164,6 +170,7 @@ pub unsafe fn store_vaddr(vaddr: usize, mem_unit: MemoryUnit, store_value: usize
             li      {mprv}, (1 << 17)
             csrrs   {mprv}, mstatus, {mprv}
             beqz    {bit_off}, 1f                       # vaddr naturally aligned
+            fence   iorw, iorw
             lwu     {store_hi}, 4({vaddr})
             srl     {store_hi}, {store_hi}, {bit_off}
             sll     {store_hi}, {store_hi}, {bit_off}   # clear low bits in vaddr[4]
@@ -171,12 +178,14 @@ pub unsafe fn store_vaddr(vaddr: usize, mem_unit: MemoryUnit, store_value: usize
             or      {store_hi}, {store_hi}, {store_lo}  # concat vaddr[4]
             sw      {store_hi}, 4({vaddr})
             lwu     {store_lo}, 0({vaddr})
+            li      {store_hi}, 64
+            sub     {neg_off}, {store_hi}, {bit_off}
             sll     {store_lo}, {store_lo}, {neg_off}
             srl     {store_lo}, {store_lo}, {neg_off}   # clear high bits in vaddr[0]
             sll     {value}, {value}, {bit_off}         # clear low bits in value
             or      {value}, {store_lo}, {value}        # concat vaddr[0]
-            fence   iorw, iorw
         1:  sw      {value}, 0({vaddr})
+            fence   iorw, iorw
             csrw    mstatus, {mprv}
             ",
             vaddr = in(reg) vaddr,
@@ -193,10 +202,11 @@ pub unsafe fn store_vaddr(vaddr: usize, mem_unit: MemoryUnit, store_value: usize
             li      {mprv}, (1 << 17)
             csrrs   {mprv}, mstatus, {mprv}
             beqz    {bit_off}, 1f                       # vaddr naturally aligned
+            fence   iorw, iorw
             ld      {store_hi}, 8({vaddr})
             srl     {store_hi}, {store_hi}, {bit_off}
             sll     {store_hi}, {store_hi}, {bit_off}   # clear low bits in vaddr[8]
-            srl     {store_lo}, {value}, {neg_off}      # clear high bits in value
+            srl     {store_lo}, {value}, {neg_off}      # clear low bits in value
             or      {store_hi}, {store_hi}, {store_lo}  # concat vaddr[8]
             sd      {store_hi}, 8({vaddr})
             ld      {store_lo}, 0({vaddr})
@@ -204,8 +214,8 @@ pub unsafe fn store_vaddr(vaddr: usize, mem_unit: MemoryUnit, store_value: usize
             srl     {store_lo}, {store_lo}, {neg_off}   # clear high bits in vaddr[0]
             sll     {value}, {value}, {bit_off}         # clear low bits in value
             or      {value}, {store_lo}, {value}        # concat vaddr[0]
-            fence   iorw, iorw
         1:  sd      {value}, 0({vaddr})
+            fence   iorw, iorw
             csrw    mstatus, {mprv}
             ",
             vaddr = in(reg) vaddr,
