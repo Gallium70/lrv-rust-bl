@@ -83,6 +83,14 @@ pub extern "C" fn mp_hook() -> bool {
     }
 }
 
+fn clear_bss() {
+    extern "C" {
+        fn _sbss();
+        fn _ebss();
+    }
+    (_sbss as usize.._ebss as usize).for_each(|a| unsafe { (a as *mut u8).write_volatile(0) });
+}
+
 #[export_name = "main"]
 extern "C" fn main(_mhartid: usize) -> ! {
     // dtb_pa is put into a1 register on qemu boot
@@ -104,6 +112,7 @@ extern "C" fn main(_mhartid: usize) -> ! {
     }
     let dtb_pa = unsafe { &external_dtb } as *const _ as usize;
     if mhartid::read() == 0 {
+        clear_bss();
         let sheap = unsafe { &mut _sheap } as *mut _ as usize;
         let eheap = unsafe { &mut _eheap } as *mut _ as usize;
         let heap_size = eheap - sheap;

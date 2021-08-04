@@ -45,7 +45,11 @@ do_start:
     li x29, 0
     li x30, 0
     li x31, 0
-    csrw mscratch, x0
+    csrwi mscratch, 0
+    csrwi mip, 0
+    csrwi mie, 0
+    csrwi mideleg, 0
+    csrwi medeleg, 0
     csrr    a2, mhartid
     lui     t0, %hi(_max_hart_id)
     add     t0, t0, %lo(_max_hart_id)

@@ -362,11 +362,13 @@ extern "C" fn start_trap_rust(trap_frame: &mut TrapFrame) {
         }
         #[cfg(target_pointer_width = "64")]
         cause => panic!(
-            "Unhandled exception! mcause: {:?}, mepc: {:016x?}, mtval: {:016x?}, mstatus: {:016x?}, trap frame: {:p}, {:x?}",
+            "Unhandled exception! mcause: {:?}, mepc: {:016x?}, mtval: {:016x?}, mstatus: {:016x?}, mie: {:016x?}, mip: {:016x?}, trap frame: {:p}, {:x?}",
             cause,
             mepc::read(),
             mtval::read(),
             mstatus::read(),
+            mie::read(),
+            mip::read(),
             &trap_frame as *const _,
             trap_frame
         ),
