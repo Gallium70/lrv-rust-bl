@@ -159,6 +159,9 @@ pub fn delegate_trap() {
         mideleg::set_sext();
         mideleg::set_stimer();
         mideleg::set_ssoft();
+        mideleg::set_uext();
+        mideleg::set_utimer();
+        mideleg::set_usoft();
         // medeleg::set_instruction_misaligned();
         // medeleg::set_breakpoint();
         medeleg::clear_breakpoint();
