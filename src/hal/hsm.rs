@@ -16,12 +16,12 @@ impl HartStateManager {
 
 #[allow(unused_variables)]
 impl rustsbi::Hsm for HartStateManager {
-    fn hart_start(&mut self, hartid: usize, start_addr: usize, opaque: usize) -> SbiRet {
-        let mut clint = Clint::new(0x2000000 as *mut u8);
+    fn hart_start(&self, hartid: usize, start_addr: usize, opaque: usize) -> SbiRet {
+        let clint = Clint::new(0x2000000 as *mut u8);
         clint.send_soft(hartid);
         SbiRet::ok(0)
     }
-    fn hart_stop(&mut self, hartid: usize) -> SbiRet {
+    fn hart_stop(&self, hartid: usize) -> SbiRet {
         SbiRet {
             error: sbi_ret_value::SBI_ERR_NOT_SUPPORTED,
             value: 0,

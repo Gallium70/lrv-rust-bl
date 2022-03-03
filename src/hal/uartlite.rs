@@ -25,7 +25,7 @@ impl Read<u8> for Uartlite {
     // 其实是可能出错的，overrun啊，这些
     type Error = Infallible;
 
-    fn try_read(&mut self) -> nb::Result<u8, Self::Error> {
+    fn read(&mut self) -> nb::Result<u8, Self::Error> {
         let pending =
             unsafe { read_volatile((self.base + (offsets::STAT_REG << self.shift)) as *const u8) }
                 & masks::RX_VALID;
@@ -43,9 +43,9 @@ impl Read<u8> for Uartlite {
 impl Write<u8> for Uartlite {
     type Error = Infallible;
 
-    fn try_write(&mut self, word: u8) -> nb::Result<(), Self::Error> {
+    fn write(&mut self, word: u8) -> nb::Result<(), Self::Error> {
         if word == ('\n' as u8) {
-            if let Err(e) = self.try_write('\r' as u8) {
+            if let Err(e) = self.write('\r' as u8) {
                 return Err(e);
             }
         }
@@ -67,7 +67,7 @@ impl Write<u8> for Uartlite {
         Ok(())
     }
 
-    fn try_flush(&mut self) -> nb::Result<(), Self::Error> {
+    fn flush(&mut self) -> nb::Result<(), Self::Error> {
         let pending =
             unsafe { read_volatile((self.base + (offsets::STAT_REG << self.shift)) as *const u8) }
                 & masks::TX_FULL;

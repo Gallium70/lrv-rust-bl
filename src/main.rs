@@ -2,9 +2,6 @@
 #![no_main]
 #![feature(naked_functions)]
 #![feature(alloc_error_handler)]
-#![feature(llvm_asm)]
-#![feature(asm)]
-#![feature(global_asm)]
 
 mod hal;
 mod misaligned;
@@ -12,6 +9,7 @@ mod trap;
 
 #[cfg(not(test))]
 use core::alloc::Layout;
+use core::arch::{asm, global_asm};
 #[cfg(not(test))]
 use core::panic::PanicInfo;
 use linked_list_allocator::LockedHeap;
@@ -137,7 +135,7 @@ extern "C" fn main(_mhartid: usize) -> ! {
         let clint = hal::Clint::new(0x2000000 as *mut u8);
         use rustsbi::init_timer;
         init_timer(clint);
-        let mut clint = hal::Clint::new(0x2000000 as *mut u8);
+        let clint = hal::Clint::new(0x2000000 as *mut u8);
         clint.set_timer(0, u64::MAX);
         // println!("[rustsbi] Timer initialized.");
 

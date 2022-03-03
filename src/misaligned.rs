@@ -1,3 +1,5 @@
+use core::arch::asm;
+
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub enum MemoryUnit {
     Byte,
