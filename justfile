@@ -16,4 +16,4 @@ bootloader:
     @cargo build --target={{target}}
 
 asm: build
-    @{{objdump}} -D -S {{bootloader-elf}} > {{bootloader-asm}}
+    @{{objdump}} -d -h -S {{bootloader-elf}} > {{bootloader-asm}}
