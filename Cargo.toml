@@ -9,7 +9,9 @@ publish = false
 
 [dependencies]
 rustsbi = "0.2.1"
-riscv = { git = "https://github.com/rust-embedded/riscv", features = ["inline-asm"] }
+riscv = { git = "https://github.com/rust-embedded/riscv", features = [
+    "inline-asm",
+] }
 linked_list_allocator = "0.9"
 r0 = "1.0"
 lazy_static = { version = "1", features = ["spin_no_std"] }
@@ -18,3 +20,6 @@ spin = "0.9"
 embedded-hal = "0.2.6"
 nb = "1"
 device_tree = { git = "https://github.com/rcore-os/device_tree-rs/" }
+
+[features]
+board_lrv = []
